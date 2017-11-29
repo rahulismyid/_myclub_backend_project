@@ -1,0 +1,23 @@
+{
+  "name": "myclub-backend",
+  "version": "1.0.0",
+  "description": "myclub node project consisting of api's.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Rahul Ajrekar",
+  "license": "ISC",
+  "dependencies": {
+    "assert": "^1.4.1",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "fs": "0.0.1-security",
+    "jsonwebtoken": "^8.1.0",
+    "mongodb": "^2.2.29",
+    "mongoose": "^4.10.7",
+    "node-localstorage": "^1.3.0",
+    "node-regexp": "^0.1.1"
+  }
+}

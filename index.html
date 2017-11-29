@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Document</title>
+    </head>
+    <script>
+        if (typeof localStorage === "undefined" || localStorage === null) {
+            var LocalStorage = require('node-localstorage').LocalStorage;
+            localStorage = new LocalStorage('./scratch');
+        }
+
+        localStorage.setItem('myFirstKey', 'myFirstValue');
+        localStorage.clear();
+        alert(localStorage.getItem('myFirstKey'));
+    </script>
+
+    <body>
+
+    </body>
+
+</html>
