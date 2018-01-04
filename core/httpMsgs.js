@@ -47,11 +47,11 @@ exports.show204 = function (req, resp) {
 
 exports.show403 = function (req, resp) {
     if (settings.httpMsgsFormat === "HTML") {
-        resp.writeHead(403, "Resource not found.", { "Content-Type": "text/html" });
+        resp.writeHead(403, "Forbidden.", { "Content-Type": "text/html" });
         resp.write("<html><head><title>404</title></head><body>403: Forbidden: You don't have permission to access [directory] on this server.</body> </html>");
     }
     else {
-        resp.writeHead(403, "Resource not found.", { "Content-Type": "application/json" });
+        resp.writeHead(403, "Forbidden.", { "Content-Type": "application/json" });
         resp.write(JSON.stringify({ data: "403: Forbidden: You don't have permission to access [directory] on this server." }));
     }
     resp.end();

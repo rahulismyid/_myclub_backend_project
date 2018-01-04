@@ -4,7 +4,10 @@ var admin = require('../controllers/admin');
 var httpmsgs = require("./httpMsgs");
 var settings = require('../settings');
 var regex = require('node-regexp');
+var Gallery = require('express-photo-gallery');
 var url = require('url');
+var ObjectId = require('mongodb').ObjectID;
+var jwt = require('jsonwebtoken');
 var express = require('express'),
     assert = require('assert'),
     bodyParser = require('body-parser'),
@@ -14,6 +17,9 @@ var express = require('express'),
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
+
+/************************** Admin routes start's.**************************/
 
 //get home
 app.get('/', function (req, res, next) {
@@ -31,28 +37,37 @@ app.get('/', function (req, res, next) {
     }
 });
 
-//get data for events
-app.get('/api/getAllEventsData', function (req, res, next) {
-    admin.getDataForEvents(req, res);
+//get method.
+app.post('/api/admin/getLoginForAdmin', function (req, res) {
+    token = parseCookies(req);
+    console.log(token);
+    if (token) {
+        jwt.verify(token.trim(), 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                res.clearCookie();
+                admin.getLoginForAdmin(req, res);
+            }
+        });
+    } else if (!token.trim()) {
+        console.log('Redirect to login page');
+        res.end('Redirect to login page');
+    } else {
+        console.log('here');
+        httpmsgs.show403(req, res);
+    }
+    token = "";
 });
 
-//get data for places
-app.get('/api/getAllPlacesData', function (req, res, next) {
-    admin.getDataForPlaces(req, res);
+//get method.
+app.post('/api/getLogoutForAdmin', function (req, res, next) {
+    admin.getLogoutForAdmin(req, res);
 });
 
-//get login
-app.post('/api/login', function (req, res, next) {
-    admin.getLogin(req, res);
-});
-
-//get login
-app.post('/api/logout', function (req, res, next) {
-    admin.getLogout(req, res);
-});
-
+/***Place Details API's start***/
 //get method
-app.get('/api/records', function (req, res, next) {
+app.get('/api/admin/getPlaceDetailsForAdmin', function (req, res, next) {
     token = parseCookies(req);
     if (token) {
         var jwt = require('jsonwebtoken');
@@ -60,7 +75,7 @@ app.get('/api/records', function (req, res, next) {
             if (err) {
                 httpmsgs.show403(req, res);
             } else {
-                admin.getRecords(req, res);
+                admin.getPlaceDetailsForAdmin(req, res);
             }
         });
     } else {
@@ -70,7 +85,9 @@ app.get('/api/records', function (req, res, next) {
 });
 
 //get method
-app.get('/api/getEvents', function (req, res, next) {
+//Needs a parameter (objectID) for GET.
+app.get('/api/admin/getSinglePlaceDetailsForAdmin/:id', function (req, res, next) {
+    var id = req.params.id;
     token = parseCookies(req);
     if (token) {
         var jwt = require('jsonwebtoken');
@@ -78,13 +95,398 @@ app.get('/api/getEvents', function (req, res, next) {
             if (err) {
                 httpmsgs.show403(req, res);
             } else {
-                admin.getDataGTtodayForEvent(req, res);
+                admin.getSinglePlaceDetailsForAdmin(req, res, id);
             }
         });
     } else {
         httpmsgs.show403(req, res);
     }
     token = "";
+});
+
+//post method.
+//Adding new place to db.
+app.post('/api/admin/addPlaceDetailsForAdmin', function (req, res, next) {
+    token = parseCookies(req);
+    console.log(token);
+    if (token) {
+        jwt.verify(token.trim(), 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                res.clearCookie();
+                admin.addPlaceDetailsForAdmin(req, res);
+            }
+        });
+    } else if (!token.trim()) {
+        console.log('Redirect to login page');
+        res.end('Redirect to login page');
+    } else {
+        console.log('here');
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//delete method
+//Needs a parameter (objectID) for post.
+app.delete('/api/admin/deletePlaceDetailsForAdmin/:id', function (req, res, next) {
+    var id = req.params.id;
+    token = parseCookies(req);
+    console.log(token);
+    if (token) {
+        jwt.verify(token.trim(), 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                res.clearCookie();
+                admin.deletePlaceDetailsForAdmin(req, res, id);
+            }
+        });
+    } else if (!token.trim()) {
+        console.log('Redirect to login page');
+        res.end('Redirect to login page');
+    } else {
+        console.log('here');
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//update method
+//Needs a parameter (objectID) for put.
+app.put('/api/admin/updatePlaceDetailsForAdmin/:id', function (req, res, next) {
+    var id = req.params.id;
+    token = parseCookies(req);
+    console.log(token);
+    if (token) {
+        jwt.verify(token.trim(), 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                res.clearCookie();
+                admin.updatePlaceDetailsForAdmin(req, res, id);
+            }
+        });
+    } else if (!token.trim()) {
+        console.log('Redirect to login page');
+        res.end('Redirect to login page');
+    } else {
+        console.log('here');
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+/***Place Details API's end***/
+
+/***Event Details API's start***/
+//get method
+app.get('/api/admin/getEventDetailsForAdmin', function (req, res, next) {
+    token = parseCookies(req);
+    if (token) {
+        var jwt = require('jsonwebtoken');
+        jwt.verify(token, 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                admin.getEventDetailsForAdmin(req, res);
+            }
+        });
+    } else {
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//get method
+//Needs a parameter (objectID) for GET.
+app.get('/api/admin/getSingleEventDetailsForAdmin/:id', function (req, res, next) {
+    var id = req.params.id;
+    token = parseCookies(req);
+    if (token) {
+        var jwt = require('jsonwebtoken');
+        jwt.verify(token, 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                admin.getSingleEventDetailsForAdmin(req, res, id);
+            }
+        });
+    } else {
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//post method.
+//Adding new place to db.
+app.post('/api/admin/addEventDetailsForAdmin', function (req, res, next) {
+    token = parseCookies(req);
+    console.log(token);
+    if (token) {
+        jwt.verify(token.trim(), 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                res.clearCookie();
+                admin.addEventDetailsForAdmin(req, res);
+            }
+        });
+    } else if (!token.trim()) {
+        console.log('Redirect to login page');
+        res.end('Redirect to login page');
+    } else {
+        console.log('here');
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//delete method
+//Needs a parameter (objectID) for post.
+app.delete('/api/admin/deleteEventDetailsForAdmin/:id', function (req, res, next) {
+    var id = req.params.id;
+    token = parseCookies(req);
+    console.log(token);
+    if (token) {
+        jwt.verify(token.trim(), 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                res.clearCookie();
+                admin.deleteEventDetailsForAdmin(req, res, id);
+            }
+        });
+    } else if (!token.trim()) {
+        console.log('Redirect to login page');
+        res.end('Redirect to login page');
+    } else {
+        console.log('here');
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//update method
+//Needs a parameter (objectID) for put.
+app.put('/api/admin/updateEventDetailsForAdmin/:id', function (req, res, next) {
+    var id = req.params.id;
+    token = parseCookies(req);
+    console.log(token);
+    if (token) {
+        jwt.verify(token.trim(), 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                res.clearCookie();
+                admin.updateEventDetailsForAdmin(req, res, id);
+            }
+        });
+    } else if (!token.trim()) {
+        console.log('Redirect to login page');
+        res.end('Redirect to login page');
+    } else {
+        console.log('here');
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//get method
+app.get('/api/admin/getPastEventDetailsForAdmin', function (req, res, next) {
+    token = parseCookies(req);
+    if (token) {
+        var jwt = require('jsonwebtoken');
+        jwt.verify(token, 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                admin.getPastEventDetailsForAdmin(req, res);
+            }
+        });
+    } else {
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//get method
+app.get('/api/admin/getUpcomingEventDetailsForAdmin', function (req, res, next) {
+    token = parseCookies(req);
+    if (token) {
+        var jwt = require('jsonwebtoken');
+        jwt.verify(token, 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                admin.getUpcomingEventDetailsForAdmin(req, res);
+            }
+        });
+    } else {
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+/***Event Details API's end***/
+
+
+/************************** Admin routes End's.**************************/
+
+//get method.
+/* Get Place details - home page. */
+app.get('/api/getPlaceDetailsForHomePage', function (req, res, next) {
+    admin.getPlaceDetailsForHomePage(req, res);
+});
+
+//get method.
+/* Get One Place detail - home page. */
+//Needs a parameter (objectID) for get.
+app.get('/api/getOnePlaceDetailForHomePage/:id', function (req, res, next) {
+    var id = req.params.id;
+    admin.getOnePlaceDetailForHomePage(req, res, id);
+});
+
+//get method.
+/* Get events happening at a place. */
+//Needs a parameter (objectID) for get.
+app.get('/api/getEventsHappeningAtPlace/:id', function (req, res, next) {
+    var id = req.params.id;
+    admin.getEventsHappeningAtPlace(req, res, id);
+});
+
+//get method.
+/* Get Event details - home page. */
+app.get('/api/getEventDetailsForHomePage', function (req, res, next) {
+    admin.getEventDetailsForHomePage(req, res);
+});
+
+//get method.
+/* Get Upcoming Event details - home page. */
+app.get('/api/getUpcomingEventDetails', function (req, res, next) {
+    admin.getUpcomingEventDetails(req, res);
+});
+
+//get method.
+/* Get One Event detail - home page. */
+//Needs a parameter (objectID) for get.
+app.get('/api/getOneEventDetailForHomePage/:id', function (req, res, next) {
+    var id = req.params.id;
+    admin.getOneEventDetailForHomePage(req, res, id);
+});
+
+//get method.
+/* Get Bar details - home page. */
+app.get('/api/getBarDetailsForHomePage', function (req, res, next) {
+    admin.getBarDetailsForHomePage(req, res);
+});
+
+//get method.
+/* Get One Event detail - home page. */
+//Needs a parameter (objectID) for get.
+app.get('/api/getOneBarDetailForHomePage/:id', function (req, res, next) {
+    var id = req.params.id;
+    admin.getOneBarDetailForHomePage(req, res, id);
+});
+
+//get method.
+/* Get Entertainment Place - home page. */
+app.get('/api/getEntertainmentPlaceDetailsForHomePage', function (req, res, next) {
+    admin.getEntertainmentPlaceDetailsForHomePage(req, res);
+});
+
+//get method.
+/* Get One Entertainment Place detail - home page. */
+//Needs a parameter (objectID) for get.
+app.get('/api/getOneEntertainmentPlaceDetailsForHomePage/:id', function (req, res, next) {
+    var id = req.params.id;
+    admin.getOneEntertainmentPlaceDetailsForHomePage(req, res, id);
+});
+
+//get method.
+/* Get NightClub - home page. */
+app.get('/api/getNightClubDetailsForHomePage', function (req, res, next) {
+    admin.getNightClubDetailsForHomePage(req, res);
+});
+
+//get method.
+/* Get One NightClub detail - home page. */
+//Needs a parameter (objectID) for get.
+app.get('/api/getOneNightClubDetailsForHomePage/:id', function (req, res, next) {
+    var id = req.params.id;
+    admin.getOneNightClubDetailsForHomePage(req, res, id);
+});
+
+//get method.
+/* Get Restaurent - home page. */
+app.get('/api/getRestaurentDetailsForHomePage', function (req, res, next) {
+    admin.getRestaurentDetailsForHomePage(req, res);
+});
+
+//get method.
+/* Get One Restaurent detail - home page. */
+//Needs a parameter (objectID) for get.
+app.get('/api/getOneRestaurentDetailsForHomePage/:id', function (req, res, next) {
+    var id = req.params.id;
+    admin.getOneRestaurentDetailsForHomePage(req, res, id);
+});
+
+//post method.
+//user registeration || check if user is already logged in.
+app.post('/api/userRegisteration', function (req, res, next) {
+    token = parseCookies(req);
+    console.log(token);
+    if (token) {
+        jwt.verify(token.trim(), 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                res.clearCookie();
+                admin.userRegisteration(req, res);
+            }
+        });
+    } else if (!token.trim()) {
+        console.log('Redirect to login page');
+        res.end('Redirect to login page');
+    } else {
+        console.log('here');
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//post method.
+//handling going, not going, maybe event.
+app.post('/api/goingNotgoingMaybe', function (req, res, next) {
+    token = parseCookies(req);
+    if (token) {
+        jwt.verify(token.trim(), 'secret', function (err, data) {
+            if (err) {
+                httpmsgs.show403(req, res);
+            } else {
+                res.clearCookie();
+                admin.goingNotgoingMaybe(req, res);
+            }
+        });
+    } else if (!token.trim()) {
+        console.log('Redirect to login page');
+        res.end('Redirect to login page');
+    } else {
+        console.log('here');
+        httpmsgs.show403(req, res);
+    }
+    token = "";
+});
+
+//get method.
+//handling going, not going, maybe event.
+app.use('/api/photos', Gallery('./images', options));
+var options = {
+    title: 'My Awesome Photo Gallery'
+};
+
+
+app.get('/api/eventPhotography', function (req, res, next) {
+    admin.eventPhotography(req, res);
 });
 
 app.get('/api/records/:id', function (req, res, next) {
@@ -110,11 +512,6 @@ app.delete('/api/records/:id', function (req, res, next) {
 //update method
 app.put('/api/records/:id', function (req, res, next) {
     admin.postRecords(req, res);
-});
-
-
-app.use(function (req, res, next) {
-
 });
 
 /********************************************
@@ -169,7 +566,6 @@ app.use(function (req, res, next) {
 function parseCookies(request) {
     var list = {},
         rc = request.headers.cookie, _cookie;
-
     rc && rc.split(';').forEach(function (cookie) {
         var parts = cookie.split('=');
         _cookie = parts[1];
